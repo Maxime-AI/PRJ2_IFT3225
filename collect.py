@@ -1,3 +1,4 @@
+import json
 import requests
 import random
 
@@ -8,6 +9,7 @@ import random
 
 relations = ["/r/RelatedTo", "/r/FormOf", "/r/IsA", "/r/PartOf", "/r/HasA", "/r/UsedFor", "/r/CapableOf", "/r/AtLocation", "/r/Causes", "/r/HasSubevent", "/r/HasFirstSubevent", "/r/HasLastSubevent", "/r/HasPrerequisite", "/r/HasProperty", "/r/MotivatedByGoal", "/r/ObstructedBy", "/r/Desires", "/r/CreatedBy", "/r/Synonym", "/r/Antonym", "/r/DistinctFrom", "/r/DerivedFrom", "/r/SymbolOf", "/r/DefinedAs", "/r/MannerOf", "/r/LocatedNear", "/r/HasContext", "/r/SimilarTo", "/r/EtymologicallyRelatedTo", "/r/EtymologicallyDerivedFrom", "/r/MadeOf", "/r/ReceivesAction"]
 
+json_dict = {"result": ""}
 objs = []
 while len(objs) < 100:
 	rel = relations[random.randint(0, len(relations) - 1)]
@@ -31,7 +33,10 @@ while len(objs) < 100:
 
 		objs.append(info)
 
+json_dict["result"] = objs
+
 # Write JSON file.
+json_obj = json.dumps(json_dict)
 with open("result.json", 'w') as f:
-    f.write(f'{{"result": {objs}}}')
+    f.write(json_obj)
 
