@@ -7,10 +7,23 @@ $(document).ready(function(){
   createTable();
   computeInfo();
 
+  // Disable OUI/NON buttons
+  $("button.oui").prop("disabled", true);
+  $("button.non").prop("disabled", true);
+
   // Events Handler
   onClick(".table-faits", ["#table-faits"], ["#consultation", "#jeux"]);
   onClick(".consultation", ["#consultation"], ["#table-faits", "#jeux"]);
-  onClick(".jeux", ["#jeux"], ["#consultation", "#table-faits"]);
+  onClick(".jeux", ["#jeux", "#oui-non"], ["#consultation", "#table-faits", "#consigne", "#qui-suis-je"]);
+
+  onClick(".oui-non", ["#oui-non"], ["#consigne", "#qui-suis-je"]);
+  onClick(".consigne", ["#consigne"], ["#oui-non", "#qui-suis-je"]);
+  onClick(".qui-suis-je", ["#qui-suis-je"], ["#oui-non", "#consigne"]);
+
+  onClickGame(".start-oui-non");
+  onClickGame(".start-consigne");
+  onClickGame(".start-qui-suis-je");
+
   search();
 
 });
@@ -96,6 +109,41 @@ var onClick = function(button, toShow, toHide){
   });
 }
 
+var onClickGame = function(button){
+  $(button).click(function(){
+    console.log(button);
+    switch(button) {
+      case ".start-oui-non":
+        ouiNonGame();
+        break;
+      case ".start-consigne":
+        consigneGame();
+        break;
+      case ".start-qui-suis-je":
+        quiSuisJeGame();
+        break;
+    }
+  });
+}
+
+var onClickAnswer = function(button, timeout){
+  $(button).click(function(){
+    if($(button).val() == "true"){
+      $("p.oui-non").text("Success!");
+    } else {
+      $("p.oui-non").text("Better Luck Next Time!");
+    }
+
+    clearTimeout(timeout);
+    // Disable OUI/NON buttons
+    $("button.oui").prop("disabled", true);
+    $("button.non").prop("disabled", true);
+
+    // Enable Start button
+    $("button.start-oui-non").prop("disabled", false);
+  });
+}
+
 var search = function(){
   /* TODO
       * avoir seulement fr et/ou en comme resultat
@@ -114,6 +162,72 @@ var search = function(){
     } else if ($("#rel").val()) {
       $.get("https://api.conceptnet.io/query?rel=" + $("#rel").val() + "&limit=1000")
     }
+  });
+}
+
+// TODO.. maybe add timer
+var ouiNonGame = function(){
+  // Disable Start button
+  $("button.start-oui-non").prop("disabled", true);
+
+  // Enable OUI/NON buttons
+  $("button.oui").prop("disabled", false);
+  $("button.non").prop("disabled", false);
+
+  var timeout = setTimeout(function(){
+    // Show times up alert
+    $("p.oui-non").text("Time's Up!");
+
+    // Disable OUI/NON buttons
+    $("button.oui").prop("disabled", true);
+    $("button.non").prop("disabled", true);
+
+    // Enable Start button
+    $("button.start-oui-non").prop("disabled", false);
+  }, 60000);
+
+  $.getJSON('result.json', function(data){
+    // Randomly get a fait
+    var index = Math.floor(Math.random() * data.result.length);
+    var fait = data.result[index];
+
+    // Randomly decides if it's going to be Oui or Non
+    if (Math.random() < 0.5) {
+      // Show question
+      $("p.oui-non").text(fait["start"]["label"] + " " + fait["rel"]["label"] + "? " + fait["end"]["label"]);
+
+      // Set value to Oui/Non button
+      $("button.oui").val(true);
+      $("button.non").val(false);
+
+    } else {
+      // Change the End node
+      var i = Math.floor(Math.random() * data.result.length);
+      var end = data.result[i]["end"];
+
+      // Show question
+      $("p.oui-non").text(fait["start"]["label"] + " " + fait["rel"]["label"] + "? " + end["label"]);
+
+      // Set value to Oui/Non button
+      $("button.oui").val(false);
+      $("button.non").val(true);
+    }
+
+    onClickAnswer("button.oui", timeout);
+    onClickAnswer("button.non", timeout);
+  });
+}
+
+var consigneGame = function(){
+  console.log(":)");
+  $(".start-consigne").click(function(){
+    console.log(":D");
+  });
+}
+
+var quiSuisJeGame = function(){
+  $(".start-qui-suis-je").click(function(){
+    console.log(":P");
   });
 }
 

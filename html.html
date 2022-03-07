@@ -7,6 +7,7 @@
   <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
         integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
   <script type="text/javascript" src="https://ajax.aspnetcdn.com/ajax/jQuery/jquery-3.4.1.min.js"></script>
+  <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
   <script type="text/javascript" src="script.js"></script>
 </head>
 <body>
@@ -32,7 +33,7 @@
   </div>
   <!-- Interface de Consultation -->
   <div id="consultation" class="container-fluid justify-content-center my-2">
-    <form>
+    <div>
       <div class="row g-2 justify-content-center m-2">
         <div class="col-auto">
           <input id="rel" type="text" class="form-control text-info" placeholder="Relation" value="/r/RelatedTo">
@@ -44,10 +45,62 @@
           <button id="submit" class="btn btn-outline-secondary" type="button">Envoi</button>
         </div>
       </div>
-    </form>
+    </div>
   </div>
   <!-- Interface de Jeux -->
-  <div id="jeux" class="row justify-content-center my-2">
+  <div id="jeux">
+    <!-- Nav Bar -->
+    <header class="container-fluid">
+      <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <form class="form-inline">
+          <button class="oui-non btn btn-outline-danger mx-2" type="button">Oui-Non</button>
+          <button class="consigne btn btn-outline-warning mx-2" type="button">Consigne</button>
+          <button class="qui-suis-je btn btn-outline-success mx-2" type="button">Qui suis-je ?</button>
+        </form>
+      </nav>
+    </header>
+    <div class="row justify-content-center">
+      <div id="oui-non">
+        <div class="row justify-content-center mt-4">
+          <!-- Change this to show timer and succes/fail message afterwards-->
+          <button class="start-oui-non btn btn-outline-info" type="button">Start ?</button>
+        </div>
+        <div class="row justify-content-center mt-4">
+          <p class="oui-non text-center text-capitalize font-weight-light"></p>
+        </div>
+        <div class="row justify-content-center">
+          <div class="col-auto">
+            <button class="oui btn btn-outline-secondary" type="button">Oui</button>
+          </div>
+          <div class="col-auto">
+            <button class="non btn btn-outline-secondary" type="button">Non</button>
+          </div>
+        </div>
+      </div>
+      <div id="consigne">
+        <div class="row justify-content-center mt-4">
+          <!-- Change this to show timer and succes/fail message afterwards-->
+          <button class="start-consigne btn btn-outline-info" type="button">Start ?</button>
+        </div>
+        <div class="row g-2 justify-content-center m-2 mt-2">
+          <p class="text-center"></p>
+        </div>
+        <div class="row g-2 justify-content-center m-2">
+          <div class="col-auto">
+            <input type="text" class="form-control text-info" placeholder="Concept" value="/c/fr/avion">
+          </div>
+          <div class="col-auto">
+            <button class="btn btn-outline-secondary" type="button">Répondre</button>
+          </div>
+        </div>
+      </div>
+      <div id="qui-suis-je">
+        <div class="row justify-content-center mt-4">
+          <!-- Change this to show timer and succes/fail message afterwards-->
+          <button class="start-qui-suis-je btn btn-outline-info" type="button">Start ?</button>
+        </div>
+      </div>
+    </div>
   </div>
 </body>
 </html>
