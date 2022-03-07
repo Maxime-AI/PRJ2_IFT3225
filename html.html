@@ -31,16 +31,23 @@
     </div>
   </div>
   <!-- Interface de Consultation -->
-  <div id="consultation" class="row justify-content-center my-2">
-    <div class="col-2 container-fluid center my-2 input-group">
-      <!--<span class="input-group-text" id="basic-addon1">/c/</span>-->
-      <input id="search" type="text" class="form-control" placeholder="" value="">
-      <!-- TODO.. show examples of concept or relations -->
-    </div>
+  <div id="consultation" class="container-fluid justify-content-center my-2">
+    <form>
+      <div class="row g-2 justify-content-center m-2">
+        <div class="col-auto">
+          <input id="rel" type="text" class="form-control text-info" placeholder="Relation" value="/r/RelatedTo">
+        </div>
+        <div class="col-auto">
+          <input id="concept" type="text" class="form-control text-info" placeholder="Concept" value="/c/fr/avion">
+        </div>
+        <div class="col-auto">
+          <button id="submit" class="btn btn-outline-secondary" type="button">Envoi</button>
+        </div>
+      </div>
+    </form>
   </div>
   <!-- Interface de Jeux -->
   <div id="jeux" class="row justify-content-center my-2">
-    :P
   </div>
 </body>
 </html>

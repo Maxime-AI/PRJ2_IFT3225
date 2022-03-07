@@ -97,8 +97,32 @@ var onClick = function(button, toShow, toHide){
 }
 
 var search = function(){
-  $("#search").on("input", function(){
-    // Search for concept or relation
-    console.log($(this).val()); // TODO.. for debugging only.
+  /* TODO
+      * avoir seulement fr et/ou en comme resultat
+      * montrez les résultats avec un bouton prev et suiv qui effectue une autre requête qui se trouve dans le 'view'
+      * updatez la table de faits
+  */
+
+  $("#submit").click(function(){
+    // Search for concept and/or relation
+    if ($("#rel").val() && $("#concept").val()) {
+      $.get("https://api.conceptnet.io/query?rel=" + $("#rel").val() + "&node=" + $("#concept").val() + "&limit=1000")
+
+    } else if ($("#concept").val()) {
+      $.get("https://api.conceptnet.io/query?node=" + $("#concept").val() + "&limit=1000")
+
+    } else if ($("#rel").val()) {
+      $.get("https://api.conceptnet.io/query?rel=" + $("#rel").val() + "&limit=1000")
+    }
   });
 }
+
+// TODO.. LEGACY CODE, COULD BE USEFUL.
+//  $("#search").on("input", function(){
+//    var node = "";
+//    var rel = "";
+//    // Search for concept or relation
+//    $.get("https://api.conceptnet.io/query?rel=" + rel + "&node=" + node + "&limit=1000")
+//
+//    console.log($(this).val()); // TODO.. for debugging only.
+//  });
