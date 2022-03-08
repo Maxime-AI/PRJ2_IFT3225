@@ -33,6 +33,74 @@ while len(objs) < 100:
 
 		objs.append(info)
 
+# Get multiple end nodes from specific start-relation concept & node in multiple concepts.
+while len(objs) < 10: # TODO.. change this to 110
+	rel = relations[random.randint(0, len(relations) - 1)]
+	lg = '/c/en' if random.choice([True, False]) else '/c/fr'
+
+	obj = requests.get(f"https://api.conceptnet.io/query?rel={rel}&other={lg}&limit=1000").json()
+
+	if len(obj['edges']) < 1 :
+		continue
+
+	index = random.randint(0, len(obj['edges']) - 1)
+	obj = requests.get(f"https://api.conceptnet.io/query?node={obj['edges'][index]['start']['@id']}&other={lg}&limit=1000").json()
+
+	if len(obj['edges']) < 2 :
+		continue
+
+	# Get the first 5 concepts [node w/multiple relations]
+	for i in range(0, 5):
+		index = random.randint(0, len(obj['edges']) - 1)
+
+		# Get the relation
+		start = obj['edges'][index]['start']
+		relation = obj['edges'][index]['rel']
+		end = obj['edges'][index]['end']
+
+		print(start['language'])
+		print(end['language'])
+
+		# Check if language is french or english
+		if start['language'] == end['language'] :
+			info = {"start": {"@id": start['@id'], "label": start['label']}, "rel": {"@id": relation['@id'], "label": relation['label']}, "end": {"@id": end['@id'], "label": end['label']}}
+
+			objs.append(info)
+
+# Get multiple end nodes from specific start-relation concept & node in multiple concepts.
+while len(objs) < 120:
+	print(len(objs))
+
+	rel = relations[random.randint(0, len(relations) - 1)]
+	lg = '/c/en' if random.choice([True, False]) else '/c/fr'
+
+	obj = requests.get(f"https://api.conceptnet.io/query?rel={rel}&other={lg}&limit=1000").json()
+
+	if len(obj['edges']) < 1 :
+		continue
+
+	index = random.randint(0, len(obj['edges']) - 1)
+	obj = requests.get(f"https://api.conceptnet.io/query?rel={rel}&start={obj['edges'][index]['start']['@id']}&other={lg}&limit=1000").json()
+
+	if len(obj['edges']) < 2 :
+		continue
+
+	# Get the first 5 concepts [start/rel]
+	for i in range(0, 5):
+		index = random.randint(0, len(obj['edges']) - 1)
+
+		# Get the relation
+		start = obj['edges'][index]['start']
+		relation = obj['edges'][index]['rel']
+		end = obj['edges'][index]['end']
+
+		# Check if language is french or english
+		if start['language'] == end['language'] :
+			info = {"start": {"@id": start['@id'], "label": start['label']}, "rel": {"@id": relation['@id'], "label": relation['label']}, "end": {"@id": end['@id'], "label": end['label']}}
+
+			objs.append(info)
+
+
 json_dict["result"] = objs
 
 # Write JSON file.

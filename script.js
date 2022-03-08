@@ -65,34 +65,25 @@ var computeInfo = function(){
       if(!conceptDict[elem["end"]["@id"]]){
         conceptDict[elem["end"]["@id"]] = true;
         conceptDict.count++;
-      } else {
-        conceptDict[elem["end"]["@id"]] = false;
-        conceptDict.count--;
       }
 
       // Concept 'start' doesn't already exists.
       if(!conceptDict[elem["start"]["@id"]]){
         conceptDict[elem["start"]["@id"]] = true;
         conceptDict.count++;
-      } else {
-        conceptDict[elem["start"]["@id"]] = false;
-        conceptDict.count--;
       }
 
       // Concept 'relation' doesn't already exists.
       if(!relationDict[elem["rel"]["@id"]]){
         relationDict[elem["rel"]["@id"]] = true;
         relationDict.count++;
-      } else {
-        relationDict[elem["rel"]["@id"]] = false;
-        relationDict.count--;
       }
     });
 
     // Update informations
     $("#faits").text(data.result.length);
-    $("#concepts").text(relationDict.count);
-    $("#relations").text(conceptDict.count);
+    $("#concepts").text(conceptDict.count);
+    $("#relations").text(relationDict.count);
   });
 }
 
@@ -111,7 +102,6 @@ var onClick = function(button, toShow, toHide){
 
 var onClickGame = function(button){
   $(button).click(function(){
-    console.log(button);
     switch(button) {
       case ".start-oui-non":
         ouiNonGame();
@@ -165,7 +155,6 @@ var search = function(){
   });
 }
 
-// TODO.. maybe add timer
 var ouiNonGame = function(){
   // Disable Start button
   $("button.start-oui-non").prop("disabled", true);
@@ -219,7 +208,10 @@ var ouiNonGame = function(){
 }
 
 var consigneGame = function(){
-  console.log(":)");
+  /* TODO..
+      1. create a dictionary with all {start/rel : {[end]}} (les start,rel ont des arrays de ends associe a eux)
+      2. randomly choisir dans ce dict là
+  */
   $(".start-consigne").click(function(){
     console.log(":D");
   });
