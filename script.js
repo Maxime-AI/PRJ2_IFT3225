@@ -1,3 +1,7 @@
+// TODO.. essayer https pour faire des requêtes à conceptNet
+var userAnswers = [];
+//var consigneDict = {};
+
 $(document).ready(function(){
   $("#table-faits").show();
   $("#consultation").hide();
@@ -85,6 +89,31 @@ var computeInfo = function(){
     $("#concepts").text(conceptDict.count);
     $("#relations").text(relationDict.count);
   });
+}
+
+var computeConsigneDict = function(){
+  var dict = {};
+
+  $.getJSON('result.json', function(data){
+    const tmp = {};
+    $.each(data.result, function(index, elem){
+      // Concept 'end' doesn't already exists.
+      if(!tmp[elem["start"]["label"]]){
+        tmp[elem["start"]["label"]] = {"isMore": false, "rel": elem["rel"]["label"], "ends": [elem["end"]["label"]]};
+      } else {
+        tmp[elem["start"]["label"]]["isMore"] = true;
+        tmp[elem["start"]["label"]]["ends"].push(elem["end"]["label"]);
+      }
+    });
+
+    $.each(tmp, function(key, val){
+      // TODO.. remove duplicate.
+      if(val["isMore"]){
+        dict[key] = val;
+      }
+    });
+  });
+  return dict;
 }
 
 // Events Handler Functions
@@ -208,19 +237,140 @@ var ouiNonGame = function(){
 }
 
 var consigneGame = function(){
-  /* TODO..
-      1. create a dictionary with all {start/rel : {[end]}} (les start,rel ont des arrays de ends associe a eux)
-      2. randomly choisir dans ce dict là
-  */
-  $(".start-consigne").click(function(){
-    console.log(":D");
+  // Enable Answer button
+  $("button.answer").prop("disabled", false);
+
+  // Disable Start button
+  $("button.start-consigne").prop("disabled", true);
+
+  // Hide <div> answers
+  $("div.consigne-answers").hide();
+
+  // Remove ul
+  $("div.consigne-answers > ul").remove();
+
+  var timeout = setTimeout(function(){
+    // Show answers
+    $("div.consigne-answers").show();
+
+    // Disable Answer button
+    $("button.consigne-answer").prop("disabled", true);
+
+    // Enable Start button
+    $("button.start-consigne").prop("disabled", false);
+
+  }, 6000);
+
+  // Create a dictionary with all {start : {rel, ends:{}}}
+  $.getJSON('result.json', function(data){
+    const tmp = {};
+    $.each(data.result, function(index, elem){
+      // Concept 'end' doesn't already exists.
+      if(!tmp[elem["start"]["label"]]){
+        var ends = {};
+        ends[elem["end"]["label"]] = true;
+        tmp[elem["start"]["label"]] = {"isMore": false, "rel": elem["rel"]["label"], "ends": {}};
+        tmp[elem["start"]["label"]]["ends"] = ends;
+      } else {
+        tmp[elem["start"]["label"]]["isMore"] = true;
+        tmp[elem["start"]["label"]]["ends"][elem["end"]["label"]] = true;
+      }
+    });
+
+    var dict = {};
+    $.each(tmp, function(key, val){
+      if(val["isMore"] && (Object.keys(val["ends"]).length > 1)){
+        dict[key] = val;
+      }
+
+    });
+
+    const keys = Object.keys(dict);
+    const index = Math.floor(Math.random() * keys.length);
+
+    // Show question
+    const question = keys[index];
+    const dictAnswers = dict[question]["ends"]; // Dictionary of answers
+    $("p.consigne").text(question + " " + dict[question]["rel"] + "?");
+
+    // Build Answers but hide it.
+    var ul = $("<ul>").addClass("list-group list-group-flush");
+    $.each(dictAnswers, function(key, val){
+      var li = $("<li>").addClass("list-group-item text-center").text(key);
+      ul.append(li);
+    });
+    $("div.consigne-answers").append(ul);
+
+    // User clicks on answer button.
+    $("button.consigne-answer").click(function(){
+      // Check input answer
+      var val = $("input.consigne-answer").val();
+
+      // Remove input answer
+      $("input.consigne-answer").val("");
+
+      if(dictAnswers[val]) {
+        $('li:contains("'+ val + '")').addClass("text-success"); // User give that answer!
+      }
+    });
   });
 }
 
 var quiSuisJeGame = function(){
-  $(".start-qui-suis-je").click(function(){
-    console.log(":P");
+  // Create a dictionary with all {start : {rel, ends:{}}}
+  $.getJSON('result.json', function(data){
+    const tmp = {};
+    $.each(data.result, function(index, elem){
+      // Concept 'end' doesn't already exists.
+      if(!tmp[elem["start"]["label"]]){
+        var ends = {};
+        ends[elem["end"]["label"]] = true;
+        tmp[elem["start"]["label"]] = {"isMore": false, "rel": elem["rel"]["label"], "ends": {}};
+        tmp[elem["start"]["label"]]["ends"] = ends;
+      } else {
+        tmp[elem["start"]["label"]]["isMore"] = true;
+        tmp[elem["start"]["label"]]["ends"][elem["end"]["label"]] = true;
+      }
+    });
+
+    var dict = {};
+    $.each(tmp, function(key, val){
+      if(val["isMore"] && (Object.keys(val["ends"]).length > 1)){
+        dict[key] = val;
+      }
+
+    });
+
+    const keys = Object.keys(dict);
+    const index = Math.floor(Math.random() * keys.length);
+
+    // Show question
+    const question = keys[index];
+    const dictAnswers = dict[question]["ends"]; // Dictionary of answers
+    $("p.consigne").text(question + " " + dict[question]["rel"] + "?");
+
+    // Build Answers but hide it.
+    var ul = $("<ul>").addClass("list-group list-group-flush");
+    $.each(dictAnswers, function(key, val){
+      var li = $("<li>").addClass("list-group-item text-center").text(key);
+      ul.append(li);
+    });
+    $("div.answers").append(ul);
+
+    // User clicks on answer button.
+    $("button.answer").click(function(){
+      // Check input answer
+      var val = $("input.answer").val();
+
+      // Remove input answer
+      $("input.answer").val("");
+
+      if(dictAnswers[val]) {
+        $('li:contains("'+ val + '")').addClass("text-success"); // User give that answer!
+      }
+    });
   });
+
 }
 
 // TODO.. LEGACY CODE, COULD BE USEFUL.
