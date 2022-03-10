@@ -159,16 +159,6 @@ var onClickAnswer = function(button, timeout){
   });
 }
 
-// Consultation's Logic
-//var consultationLogic = function(){
-//  // TODO.. add nav bar with previous and next (only depending on the view key)
-//  // TODO.. search and show in a table
-//  // TODO.. only having fr/en result
-//  // TODO.. update table de faits (for each queries)
-//  // TODO.. show results in a table
-//
-//}
-
 var createTableConsultation = function(data){
   console.log(data);
   console.log(data["edges"]);
