@@ -1,13 +1,10 @@
-// TODO.. essayer https pour faire des requêtes à conceptNet
-var userAnswers = [];
-
 $(document).ready(function(){
   $("#table-faits").show();
   $("#consultation").hide();
   $("#jeux").hide();
 
   // Load pages
-  createTable();
+  createTableDeFaits();
   computeInfo();
 
   // Disable OUI/NON buttons
@@ -32,7 +29,7 @@ $(document).ready(function(){
 });
 
 // Constructor Functions
-var createTable = function(){
+var createTableDeFaits = function(){
   var nodeTable = $('<table>');
   nodeTable.addClass("table center table-bordered table-info")
 
@@ -162,6 +159,46 @@ var onClickAnswer = function(button, timeout){
   });
 }
 
+// Consultation's Logic
+//var consultationLogic = function(){
+//  // TODO.. add nav bar with previous and next (only depending on the view key)
+//  // TODO.. search and show in a table
+//  // TODO.. only having fr/en result
+//  // TODO.. update table de faits (for each queries)
+//  // TODO.. show results in a table
+//
+//}
+
+var createTableConsultation = function(data){
+  console.log(data);
+  console.log(data["edges"]);
+
+  // TODO.. 1. update JSON file.
+
+  var nodeTable = $('<table>');
+    nodeTable.addClass("table table-bordered table-info")
+
+    var nodesTable = ["Start", "Relation", "End"];
+    var node = $("<tr>");
+    $.each(nodesTable, function(index, elem){
+      node.append($("<th>").addClass("text-center").text(elem));
+    });
+    nodeTable.append(node);
+
+    // Update Table with JSON data.
+    $.each(data["edges"], function(index, elem){
+      console.log("elem: " + elem);
+      var n = $("<tr>");
+      n.append($("<td>").addClass(elem["start"]["@id"]).text(elem["start"]["label"]));
+      n.append($("<td>").addClass(elem["rel"]["@id"]).text(elem["rel"]["label"]));
+      n.append($("<td>").addClass(elem["end"]["@id"]).text(elem["end"]["label"]));
+
+      nodeTable.append(n);
+    });
+
+    $('#consultation div.table').append(nodeTable);
+}
+
 var search = function(){
   /* TODO
       * avoir seulement fr et/ou en comme resultat
@@ -170,19 +207,21 @@ var search = function(){
   */
 
   $("#submit").click(function(){
+    const query = (($("#rel").val() != "") ? "rel=" + $("#rel").val() : "") + ((($("#rel").val() != "") && ($("#concept").val() != "")) ? "&" : "") + (($("#concept").val() != "") ? "node=" + $("#concept").val() : "")
+
+
     // Search for concept and/or relation
-    if ($("#rel").val() && $("#concept").val()) {
-      $.get("https://api.conceptnet.io/query?rel=" + $("#rel").val() + "&node=" + $("#concept").val() + "&limit=1000")
-
-    } else if ($("#concept").val()) {
-      $.get("https://api.conceptnet.io/query?node=" + $("#concept").val() + "&limit=1000")
-
-    } else if ($("#rel").val()) {
-      $.get("https://api.conceptnet.io/query?rel=" + $("#rel").val() + "&limit=1000")
-    }
+    $.get("https://api.conceptnet.io/query?" + query + "&limit=1000", "jsonp", createTableConsultation);
   });
 }
 
+
+
+
+
+
+
+// Game's Logic
 var ouiNonGame = function(){
   // Disable Start button
   $("button.start-oui-non").prop("disabled", true);
