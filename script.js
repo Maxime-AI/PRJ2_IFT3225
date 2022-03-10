@@ -1,6 +1,5 @@
 // TODO.. essayer https pour faire des requêtes à conceptNet
 var userAnswers = [];
-//var consigneDict = {};
 
 $(document).ready(function(){
   $("#table-faits").show();
@@ -238,7 +237,7 @@ var ouiNonGame = function(){
 
 var consigneGame = function(){
   // Enable Answer button
-  $("button.answer").prop("disabled", false);
+  $("button.consigne-answer").prop("disabled", false);
 
   // Disable Start button
   $("button.start-consigne").prop("disabled", true);
@@ -259,7 +258,7 @@ var consigneGame = function(){
     // Enable Start button
     $("button.start-consigne").prop("disabled", false);
 
-  }, 6000);
+  }, 60000);
 
   // Create a dictionary with all {start : {rel, ends:{}}}
   $.getJSON('result.json', function(data){
@@ -296,7 +295,7 @@ var consigneGame = function(){
     // Build Answers but hide it.
     var ul = $("<ul>").addClass("list-group list-group-flush");
     $.each(dictAnswers, function(key, val){
-      var li = $("<li>").addClass("list-group-item text-center").text(key);
+      var li = $("<li>").addClass("list-group-item text-center text-capitalize").text(key);
       ul.append(li);
     });
     $("div.consigne-answers").append(ul);
@@ -316,61 +315,107 @@ var consigneGame = function(){
   });
 }
 
+var quiSuisJeTime = (dictRel, index = 1) => () => {
+  const colors = ["text-info", "text-success", "text-warning", "text-danger"]
+
+  var start = ((dictRel[index]["start"] === undefined) ? "????" : dictRel[index]["start"]);
+  var rel = dictRel[index]["rel"];
+  var end = ((dictRel[index]["end"] === undefined) ? "????" : dictRel[index]["end"]);
+  $("ul.qui-suis-je").append($("<li>").addClass("list-group-item text-center text-capitalize " + colors[index]).text(start + " " + rel + " " + end));
+
+  index = index + 1;
+}
+
 var quiSuisJeGame = function(){
+  // Enable Answer button
+  $("button.qui-suis-je-answer").prop("disabled", false);
+
+  // Disable Start button
+  $("button.start-qui-suis-je").prop("disabled", true);
+
+  // Remove <p> text
+  $("p.qui-suis-je").text("");
+
+  // Remove ul
+  $("ul.qui-suis-je > li").remove();
+
   // Create a dictionary with all {start : {rel, ends:{}}}
   $.getJSON('result.json', function(data){
     const tmp = {};
     $.each(data.result, function(index, elem){
+
       // Concept 'end' doesn't already exists.
       if(!tmp[elem["start"]["label"]]){
-        var ends = {};
-        ends[elem["end"]["label"]] = true;
-        tmp[elem["start"]["label"]] = {"isMore": false, "rel": elem["rel"]["label"], "ends": {}};
-        tmp[elem["start"]["label"]]["ends"] = ends;
+        tmp[elem["start"]["label"]] = {"isMore": false, "relations": [{"rel": elem["rel"]["label"], "end": elem["end"]["label"]}]};
       } else {
         tmp[elem["start"]["label"]]["isMore"] = true;
-        tmp[elem["start"]["label"]]["ends"][elem["end"]["label"]] = true;
+        tmp[elem["start"]["label"]]["relations"].push({"rel": elem["rel"]["label"], "end": elem["end"]["label"]});
+      }
+
+      if(!tmp[elem["end"]["label"]]){
+        tmp[elem["end"]["label"]] = {"isMore": false, "relations": [{"start": elem["start"]["label"], "rel": elem["rel"]["label"]}]};
+      } else {
+        tmp[elem["end"]["label"]]["isMore"] = true;
+        tmp[elem["end"]["label"]]["relations"].push({"start": elem["start"]["label"], "rel": elem["rel"]["label"]});
       }
     });
 
     var dict = {};
     $.each(tmp, function(key, val){
-      if(val["isMore"] && (Object.keys(val["ends"]).length > 1)){
+      if(val["isMore"] && (Object.keys(val["relations"]).length >= 5)){
+        // TODO.. deal with duplicates
         dict[key] = val;
       }
-
     });
 
     const keys = Object.keys(dict);
     const index = Math.floor(Math.random() * keys.length);
+    const node = keys[index];
 
-    // Show question
-    const question = keys[index];
-    const dictAnswers = dict[question]["ends"]; // Dictionary of answers
-    $("p.consigne").text(question + " " + dict[question]["rel"] + "?");
+    // Get relations array
+    const dictRel = dict[node]["relations"];
 
-    // Build Answers but hide it.
-    var ul = $("<ul>").addClass("list-group list-group-flush");
-    $.each(dictAnswers, function(key, val){
-      var li = $("<li>").addClass("list-group-item text-center").text(key);
-      ul.append(li);
-    });
-    $("div.answers").append(ul);
+    var start = ((dictRel[0]["start"] === undefined) ? "????" : dictRel[0]["start"]);
+    var rel = dictRel[0]["rel"];
+    var end = ((dictRel[0]["end"] === undefined) ? "????" : dictRel[0]["end"]);
+    $("ul.qui-suis-je").append($("<li>").addClass("list-group-item text-center text-capitalize text-primary").text(start + " " + rel + " " + end));
+
+    var interval = setInterval(quiSuisJeTime(dictRel), 20000);
+    var timeout = setTimeout(clearInterval, 60000, interval);
+    var timeout2 = setTimeout(function(){   // Time Out!
+      $("p.qui-suis-je").text("Time Out!");
+
+      // Disable Answer button
+      $("button.qui-suis-je-answer").prop("disabled", true);
+
+      // Enable Start button
+      $("button.start-qui-suis-je").prop("disabled", false);
+
+    }, 80000);
 
     // User clicks on answer button.
-    $("button.answer").click(function(){
+    $("button.qui-suis-je-answer").click(function(){
       // Check input answer
-      var val = $("input.answer").val();
+      var val = $("input.qui-suis-je-answer").val();
 
       // Remove input answer
-      $("input.answer").val("");
+      $("input.qui-suis-je-answer").val("");
 
-      if(dictAnswers[val]) {
-        $('li:contains("'+ val + '")').addClass("text-success"); // User give that answer!
+      if(val == node) {
+        clearInterval(interval);
+        clearTimeout(timeout);
+        clearTimeout(timeout2);
+
+        $("p.qui-suis-je").text((8 - $("#qui-suis-je ul li").length)+" Points!");
+
+        // Disable Answer button
+        $("button.qui-suis-je-answer").prop("disabled", true);
+
+        // Enable Start button
+        $("button.start-qui-suis-je").prop("disabled", false);
       }
     });
   });
-
 }
 
 // TODO.. LEGACY CODE, COULD BE USEFUL.
