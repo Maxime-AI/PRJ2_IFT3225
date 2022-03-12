@@ -7,6 +7,9 @@ $(document).ready(function(){
   createTableDeFaits();
   computeInfo();
 
+  // Set JSON to local storage.
+  getInfo();
+
   // Disable OUI/NON buttons
   $("button.oui").prop("disabled", true);
   $("button.non").prop("disabled", true);
@@ -24,7 +27,7 @@ $(document).ready(function(){
   onClickGame(".start-consigne");
   onClickGame(".start-qui-suis-je");
 
-  search();
+  consultation();
 
 });
 
@@ -53,6 +56,47 @@ var createTableDeFaits = function(){
   });
 
   $('#table').append(nodeTable);
+}
+
+var computeNewInfo = function(){
+  var conceptDict = {count: 0};
+  var relationDict = {count: 0};
+
+  $("#table table").find("td").each(function(){
+    var td = $(this).attr("class");
+    console.log(td);
+    if(td.includes("/r/")) {
+      // It's a relation
+      if(!relationDict[td]){
+        relationDict[td] = true;
+        relationDict.count++;
+      }
+    } else {
+      // It's a concept
+      if(!conceptDict[td]){
+        conceptDict[td] = true;
+        conceptDict.count++;
+      }
+    }
+  });
+
+  // Update informations
+  $("#faits").text($("#table table").find("td").length / 3);
+  $("#concepts").text(conceptDict.count);
+  $("#relations").text(relationDict.count);
+}
+
+var getInfo = function() {
+  $.getJSON('result.json', function(data){
+    $.each(data.result.edges, function(index, elem){
+      var start = {"@id": elem["start"]["@id"], "label": elem["start"]["label"]};
+      var rel = {"@id": elem["rel"]["@id"], "label": elem["rel"]["label"]};
+      var end = {"@id": elem["end"]["@id"], "label": elem["end"]["label"]};
+
+      data.result.push({"start": start, "rel": rel, "end": end});
+    });
+    window.localStorage.setItem("result", JSON.stringify(data.result));
+  });
 }
 
 var computeInfo = function(){
@@ -160,10 +204,8 @@ var onClickAnswer = function(button, timeout){
 }
 
 var createTableConsultation = function(data){
-  console.log(data);
-  console.log(data["edges"]);
-
-  // TODO.. 1. update JSON file.
+  // Remove table
+  $("#consultation table").remove();
 
   var nodeTable = $('<table>');
     nodeTable.addClass("table table-bordered table-info")
@@ -177,7 +219,6 @@ var createTableConsultation = function(data){
 
     // Update Table with JSON data.
     $.each(data["edges"], function(index, elem){
-      console.log("elem: " + elem);
       var n = $("<tr>");
       n.append($("<td>").addClass(elem["start"]["@id"]).text(elem["start"]["label"]));
       n.append($("<td>").addClass(elem["rel"]["@id"]).text(elem["rel"]["label"]));
@@ -187,29 +228,130 @@ var createTableConsultation = function(data){
     });
 
     $('#consultation div.table').append(nodeTable);
+
+    // Update Table de Faits
+    var nodeTable = $('#table .table');
+    $.each(data["edges"], function(index, elem){
+      console.log(elem);
+      var n = $("<tr>");
+      n.append($("<td>").addClass(elem["start"]["@id"]).text(elem["start"]["label"]));
+      n.append($("<td>").addClass(elem["rel"]["@id"]).text(elem["rel"]["label"]));
+      n.append($("<td>").addClass(elem["end"]["@id"]).text(elem["end"]["label"]));
+      nodeTable.append(n);
+    });
+    computeNewInfo();
+
 }
 
-var search = function(){
-  /* TODO
-      * avoir seulement fr et/ou en comme resultat
-      * montrez les résultats avec un bouton prev et suiv qui effectue une autre requête qui se trouve dans le 'view'
-      * updatez la table de faits
-  */
+var refactorData = function(data){
+  // This function updates the JSON file and returns only french and/or english results.
 
+  // Filter the edges to only keep french and/or english result.
+  var edges = [];
+  $.each(data["edges"], function(index, elem){
+    if(elem["start"]["language"] == "fr" || elem["start"]["language"] == "en"){
+      edges.push(elem);
+    }
+  });
+  data["edges"] = edges;
+
+  // TODO.. update JSON file
+  /*if nothing works, use local storage lol https://stackoverflow.com/questions/23557987/local-json-file-update#23558704*/
+  /*var newData;
+  $.getJSON('result.json', function(jsonData){
+    $.each(data.edges, function(index, elem){
+      var start = {"@id": elem["start"]["@id"], "label": elem["start"]["label"]};
+      var rel = {"@id": elem["rel"]["@id"], "label": elem["rel"]["label"]};
+      var end = {"@id": elem["end"]["@id"], "label": elem["end"]["label"]};
+
+      jsonData.result.push({"start": start, "rel": rel, "end": end});
+    });
+    console.log(jsonData);
+    newData = jsonData;
+
+    console.log(newData);
+
+    $.ajax({
+      type: 'POST',
+      url: 'http://localhost:63342/PRJ2_IFT3225/result.json',
+      contentType: "application/json",
+      async: false,
+      data: newData,
+      dataType: 'json',
+      success: function(res){
+        console.log(res);
+      }
+    });
+  });*/
+
+  return data;
+}
+
+var search = function(query){
+  var result = null;
+
+  // Search for concept and/or relation
+  $.ajax({
+    type: 'GET',
+    url: query,
+    async: false,
+    success: function(data){
+      console.log(data);
+      result = refactorData(data);
+
+    },
+    error: function(XMLHttpRequest, status, err){
+      console.log(XMLHttpRequest);
+    }
+  });
+
+  createTableConsultation(result);
+  if(result["view"]){
+    $("#consultation nav").show();
+
+    if(result["view"]["nextPage"]){
+      $("#consultation .next").show();
+    } else {
+      $("#consultation .next").hide();
+    }
+
+    if(result["view"]["previousPage"]){
+      $("#consultation .prev").show();
+    } else {
+      $("#consultation .prev").hide();
+    }
+  }
+
+  return result;
+}
+
+var consultation = function() {
+  // Disable Nav bar.
+  $("#consultation nav").hide();
+
+  var data = null;
   $("#submit").click(function(){
-    const query = (($("#rel").val() != "") ? "rel=" + $("#rel").val() : "") + ((($("#rel").val() != "") && ($("#concept").val() != "")) ? "&" : "") + (($("#concept").val() != "") ? "node=" + $("#concept").val() : "")
+    // Disable Nav bar.
+    $("#consultation nav").hide();
+    $("#consultation .next").hide();
+    $("#consultation .prev").hide();
 
+    // Build the query.
+    const query = (($("#rel").val() != "") ? "rel=" + $("#rel").val() : "")
+                  + ((($("#rel").val() != "") && ($("#concept").val() != "")) ? "&" : "")
+                  + (($("#concept").val() != "") ? "node=" + $("#concept").val() : "");
+    const httpsQuery = "https://api.conceptnet.io/query?" + query + "&limit=1000";
+    data = search(httpsQuery);
+  });
 
-    // Search for concept and/or relation
-    $.get("https://api.conceptnet.io/query?" + query + "&limit=1000", "jsonp", createTableConsultation);
+  $("#consultation .next").click(function(){
+    data = search("https://api.conceptnet.io/" + data["view"]["nextPage"]);
+  });
+
+  $("#consultation .prev").click(function(){
+    data = search("https://api.conceptnet.io/" + data["view"]["previousPage"]);
   });
 }
-
-
-
-
-
-
 
 // Game's Logic
 var ouiNonGame = function(){
@@ -446,13 +588,3 @@ var quiSuisJeGame = function(){
     });
   });
 }
-
-// TODO.. LEGACY CODE, COULD BE USEFUL.
-//  $("#search").on("input", function(){
-//    var node = "";
-//    var rel = "";
-//    // Search for concept or relation
-//    $.get("https://api.conceptnet.io/query?rel=" + rel + "&node=" + node + "&limit=1000")
-//
-//    console.log($(this).val()); // TODO.. for debugging only.
-//  });
