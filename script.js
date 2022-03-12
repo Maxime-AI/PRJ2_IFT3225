@@ -314,8 +314,8 @@ var ouiNonGame = function(){
 
   } else {
     // Change the End node
-    var i = Math.floor(Math.random() * data.result.length);
-    var end = data.result[i]["end"];
+    var i = Math.floor(Math.random() * JSON.parse(localStorage["result"]).length);
+    var end = JSON.parse(localStorage["result"])[i]["end"];
 
     // Show question
     $("p.oui-non").text(fait["start"]["label"] + " " + fait["rel"]["label"] + "? " + end["label"]);
