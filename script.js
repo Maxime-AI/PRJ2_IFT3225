@@ -3,12 +3,12 @@ $(document).ready(function(){
   $("#consultation").hide();
   $("#jeux").hide();
 
+  // Set JSON to local storage.
+  getInfo();
+
   // Load pages
   createTableDeFaits();
   computeInfo();
-
-  // Set JSON to local storage.
-  getInfo();
 
   // Disable OUI/NON buttons
   $("button.oui").prop("disabled", true);
@@ -44,48 +44,19 @@ var createTableDeFaits = function(){
   nodeTable.append(node);
 
   // Update Table with JSON data.
-  $.getJSON('result.json', function(data){
-    $.each(data.result, function(index, elem){
+  $.each(JSON.parse(localStorage["result"]), function(index, elem){
 
-      var n = $("<tr>");
-      $.each(elem, function(key, val){
-        n.append($("<td>").addClass(val["@id"]).text(val["label"]));
-      });
-      nodeTable.append(n);
+    var n = $("<tr>");
+    $.each(elem, function(key, val){
+      n.append($("<td>").addClass(val["@id"]).text(val["label"]));
     });
+    nodeTable.append(n);
   });
 
   $('#table').append(nodeTable);
 }
 
-var computeNewInfo = function(){
-  var conceptDict = {count: 0};
-  var relationDict = {count: 0};
-
-  $("#table table").find("td").each(function(){
-    var td = $(this).attr("class");
-    console.log(td);
-    if(td.includes("/r/")) {
-      // It's a relation
-      if(!relationDict[td]){
-        relationDict[td] = true;
-        relationDict.count++;
-      }
-    } else {
-      // It's a concept
-      if(!conceptDict[td]){
-        conceptDict[td] = true;
-        conceptDict.count++;
-      }
-    }
-  });
-
-  // Update informations
-  $("#faits").text($("#table table").find("td").length / 3);
-  $("#concepts").text(conceptDict.count);
-  $("#relations").text(relationDict.count);
-}
-
+// Put result.json data inside local storage.
 var getInfo = function() {
   $.getJSON('result.json', function(data){
     $.each(data.result.edges, function(index, elem){
@@ -99,61 +70,36 @@ var getInfo = function() {
   });
 }
 
+// Compute nombre de faits, nombre de concepts différents and nombre de relations
+// différentes.
 var computeInfo = function(){
   var conceptDict = {count: 0};
   var relationDict = {count: 0};
 
-  $.getJSON('result.json', function(data){
-    $.each(data.result, function(index, elem){
-      // Concept 'end' doesn't already exists.
-      if(!conceptDict[elem["end"]["@id"]]){
-        conceptDict[elem["end"]["@id"]] = true;
-        conceptDict.count++;
-      }
+  $.each(JSON.parse(localStorage["result"]), function(index, elem){
+    // Concept 'end' doesn't already exists.
+    if(!conceptDict[elem["end"]["@id"]]){
+      conceptDict[elem["end"]["@id"]] = true;
+      conceptDict.count++;
+    }
 
-      // Concept 'start' doesn't already exists.
-      if(!conceptDict[elem["start"]["@id"]]){
-        conceptDict[elem["start"]["@id"]] = true;
-        conceptDict.count++;
-      }
+    // Concept 'start' doesn't already exists.
+    if(!conceptDict[elem["start"]["@id"]]){
+      conceptDict[elem["start"]["@id"]] = true;
+      conceptDict.count++;
+    }
 
-      // Concept 'relation' doesn't already exists.
-      if(!relationDict[elem["rel"]["@id"]]){
-        relationDict[elem["rel"]["@id"]] = true;
-        relationDict.count++;
-      }
-    });
-
-    // Update informations
-    $("#faits").text(data.result.length);
-    $("#concepts").text(conceptDict.count);
-    $("#relations").text(relationDict.count);
+    // Concept 'relation' doesn't already exists.
+    if(!relationDict[elem["rel"]["@id"]]){
+      relationDict[elem["rel"]["@id"]] = true;
+      relationDict.count++;
+    }
   });
-}
 
-var computeConsigneDict = function(){
-  var dict = {};
-
-  $.getJSON('result.json', function(data){
-    const tmp = {};
-    $.each(data.result, function(index, elem){
-      // Concept 'end' doesn't already exists.
-      if(!tmp[elem["start"]["label"]]){
-        tmp[elem["start"]["label"]] = {"isMore": false, "rel": elem["rel"]["label"], "ends": [elem["end"]["label"]]};
-      } else {
-        tmp[elem["start"]["label"]]["isMore"] = true;
-        tmp[elem["start"]["label"]]["ends"].push(elem["end"]["label"]);
-      }
-    });
-
-    $.each(tmp, function(key, val){
-      // TODO.. remove duplicate.
-      if(val["isMore"]){
-        dict[key] = val;
-      }
-    });
-  });
-  return dict;
+  // Update informations
+  $("#faits").text(JSON.parse(localStorage["result"]).length);
+  $("#concepts").text(conceptDict.count);
+  $("#relations").text(relationDict.count);
 }
 
 // Events Handler Functions
@@ -229,6 +175,7 @@ var createTableConsultation = function(data){
 
     $('#consultation div.table').append(nodeTable);
 
+    // TODO.. review this
     // Update Table de Faits
     var nodeTable = $('#table .table');
     $.each(data["edges"], function(index, elem){
@@ -239,50 +186,24 @@ var createTableConsultation = function(data){
       n.append($("<td>").addClass(elem["end"]["@id"]).text(elem["end"]["label"]));
       nodeTable.append(n);
     });
-    computeNewInfo();
-
+    computeInfo();
 }
 
-var refactorData = function(data){
-  // This function updates the JSON file and returns only french and/or english results.
-
+// This function updates the JSON file and returns only french and/or english results.
+var updateData = function(data){
   // Filter the edges to only keep french and/or english result.
   var edges = [];
+  var jsonData = JSON.parse(localStorage["result"]);
   $.each(data["edges"], function(index, elem){
     if(elem["start"]["language"] == "fr" || elem["start"]["language"] == "en"){
       edges.push(elem);
+      jsonData.push(elem);
     }
   });
   data["edges"] = edges;
 
-  // TODO.. update JSON file
-  /*if nothing works, use local storage lol https://stackoverflow.com/questions/23557987/local-json-file-update#23558704*/
-  /*var newData;
-  $.getJSON('result.json', function(jsonData){
-    $.each(data.edges, function(index, elem){
-      var start = {"@id": elem["start"]["@id"], "label": elem["start"]["label"]};
-      var rel = {"@id": elem["rel"]["@id"], "label": elem["rel"]["label"]};
-      var end = {"@id": elem["end"]["@id"], "label": elem["end"]["label"]};
-
-      jsonData.result.push({"start": start, "rel": rel, "end": end});
-    });
-    console.log(jsonData);
-    newData = jsonData;
-
-    console.log(newData);
-
-    $.ajax({
-      type: 'POST',
-      url: 'http://localhost:63342/PRJ2_IFT3225/result.json',
-      contentType: "application/json",
-      async: false,
-      data: newData,
-      dataType: 'json',
-      success: function(res){
-        console.log(res);
-      }
-    });
-  });*/
+  // Update Local Storage data.
+  window.localStorage.setItem("result", JSON.stringify(jsonData));
 
   return data;
 }
@@ -297,7 +218,7 @@ var search = function(query){
     async: false,
     success: function(data){
       console.log(data);
-      result = refactorData(data);
+      result = updateData(data);
 
     },
     error: function(XMLHttpRequest, status, err){
@@ -374,36 +295,34 @@ var ouiNonGame = function(){
     $("button.start-oui-non").prop("disabled", false);
   }, 60000);
 
-  $.getJSON('result.json', function(data){
-    // Randomly get a fait
-    var index = Math.floor(Math.random() * data.result.length);
-    var fait = data.result[index];
+  // Randomly get a fait
+  var index = Math.floor(Math.random() * JSON.parse(localStorage["result"]).length);
+  var fait = JSON.parse(localStorage["result"])[index];
 
-    // Randomly decides if it's going to be Oui or Non
-    if (Math.random() < 0.5) {
-      // Show question
-      $("p.oui-non").text(fait["start"]["label"] + " " + fait["rel"]["label"] + "? " + fait["end"]["label"]);
+  // Randomly decides if it's going to be Oui or Non
+  if (Math.random() < 0.5) {
+    // Show question
+    $("p.oui-non").text(fait["start"]["label"] + " " + fait["rel"]["label"] + "? " + fait["end"]["label"]);
 
-      // Set value to Oui/Non button
-      $("button.oui").val(true);
-      $("button.non").val(false);
+    // Set value to Oui/Non button
+    $("button.oui").val(true);
+    $("button.non").val(false);
 
-    } else {
-      // Change the End node
-      var i = Math.floor(Math.random() * data.result.length);
-      var end = data.result[i]["end"];
+  } else {
+    // Change the End node
+    var i = Math.floor(Math.random() * data.result.length);
+    var end = data.result[i]["end"];
 
-      // Show question
-      $("p.oui-non").text(fait["start"]["label"] + " " + fait["rel"]["label"] + "? " + end["label"]);
+    // Show question
+    $("p.oui-non").text(fait["start"]["label"] + " " + fait["rel"]["label"] + "? " + end["label"]);
 
-      // Set value to Oui/Non button
-      $("button.oui").val(false);
-      $("button.non").val(true);
-    }
+    // Set value to Oui/Non button
+    $("button.oui").val(false);
+    $("button.non").val(true);
+  }
 
-    onClickAnswer("button.oui", timeout);
-    onClickAnswer("button.non", timeout);
-  });
+  onClickAnswer("button.oui", timeout);
+  onClickAnswer("button.non", timeout);
 }
 
 var consigneGame = function(){
@@ -432,57 +351,55 @@ var consigneGame = function(){
   }, 60000);
 
   // Create a dictionary with all {start : {rel, ends:{}}}
-  $.getJSON('result.json', function(data){
-    const tmp = {};
-    $.each(data.result, function(index, elem){
-      // Concept 'end' doesn't already exists.
-      if(!tmp[elem["start"]["label"]]){
-        var ends = {};
-        ends[elem["end"]["label"]] = true;
-        tmp[elem["start"]["label"]] = {"isMore": false, "rel": elem["rel"]["label"], "ends": {}};
-        tmp[elem["start"]["label"]]["ends"] = ends;
-      } else {
-        tmp[elem["start"]["label"]]["isMore"] = true;
-        tmp[elem["start"]["label"]]["ends"][elem["end"]["label"]] = true;
-      }
-    });
+  const tmp = {};
+  $.each(JSON.parse(localStorage["result"]), function(index, elem){
 
-    var dict = {};
-    $.each(tmp, function(key, val){
-      if(val["isMore"] && (Object.keys(val["ends"]).length > 1)){
-        dict[key] = val;
-      }
+    // Concept 'end' doesn't already exists.
+    if(!tmp[elem["start"]["label"]]){
+      var ends = {};
+      ends[elem["end"]["label"]] = true;
+      tmp[elem["start"]["label"]] = {"isMore": false, "rel": elem["rel"]["label"], "ends": {}};
+      tmp[elem["start"]["label"]]["ends"] = ends;
+    } else {
+      tmp[elem["start"]["label"]]["isMore"] = true;
+      tmp[elem["start"]["label"]]["ends"][elem["end"]["label"]] = true;
+    }
+  });
 
-    });
+  var dict = {};
+  $.each(tmp, function(key, val){
+    if(val["isMore"] && (Object.keys(val["ends"]).length > 1)){
+      dict[key] = val;
+    }
+  });
 
-    const keys = Object.keys(dict);
-    const index = Math.floor(Math.random() * keys.length);
+  const keys = Object.keys(dict);
+  const index = Math.floor(Math.random() * keys.length);
 
-    // Show question
-    const question = keys[index];
-    const dictAnswers = dict[question]["ends"]; // Dictionary of answers
-    $("p.consigne").text(question + " " + dict[question]["rel"] + "?");
+  // Show question
+  const question = keys[index];
+  const dictAnswers = dict[question]["ends"]; // Dictionary of answers
+  $("p.consigne").text(question + " " + dict[question]["rel"] + "?");
 
-    // Build Answers but hide it.
-    var ul = $("<ul>").addClass("list-group list-group-flush");
-    $.each(dictAnswers, function(key, val){
-      var li = $("<li>").addClass("list-group-item text-center text-capitalize").text(key);
-      ul.append(li);
-    });
-    $("div.consigne-answers").append(ul);
+  // Build Answers but hide it.
+  var ul = $("<ul>").addClass("list-group list-group-flush");
+  $.each(dictAnswers, function(key, val){
+    var li = $("<li>").addClass("list-group-item text-center text-capitalize").text(key);
+    ul.append(li);
+  });
+  $("div.consigne-answers").append(ul);
 
-    // User clicks on answer button.
-    $("button.consigne-answer").click(function(){
-      // Check input answer
-      var val = $("input.consigne-answer").val();
+  // User clicks on answer button.
+  $("button.consigne-answer").click(function(){
+    // Check input answer
+    var val = $("input.consigne-answer").val();
 
-      // Remove input answer
-      $("input.consigne-answer").val("");
+    // Remove input answer
+    $("input.consigne-answer").val("");
 
-      if(dictAnswers[val]) {
-        $('li:contains("'+ val + '")').addClass("text-success"); // User give that answer!
-      }
-    });
+    if(dictAnswers[val]) {
+      $('li:contains("'+ val + '")').addClass("text-success"); // User give that answer!
+    }
   });
 }
 
@@ -511,80 +428,78 @@ var quiSuisJeGame = function(){
   $("ul.qui-suis-je > li").remove();
 
   // Create a dictionary with all {start : {rel, ends:{}}}
-  $.getJSON('result.json', function(data){
-    const tmp = {};
-    $.each(data.result, function(index, elem){
+  const tmp = {};
+  $.each(JSON.parse(localStorage["result"]), function(index, elem){
 
-      // Concept 'end' doesn't already exists.
-      if(!tmp[elem["start"]["label"]]){
-        tmp[elem["start"]["label"]] = {"isMore": false, "relations": [{"rel": elem["rel"]["label"], "end": elem["end"]["label"]}]};
-      } else {
-        tmp[elem["start"]["label"]]["isMore"] = true;
-        tmp[elem["start"]["label"]]["relations"].push({"rel": elem["rel"]["label"], "end": elem["end"]["label"]});
-      }
+    // Concept 'end' doesn't already exists.
+    if(!tmp[elem["start"]["label"]]){
+      tmp[elem["start"]["label"]] = {"isMore": false, "relations": [{"rel": elem["rel"]["label"], "end": elem["end"]["label"]}]};
+    } else {
+      tmp[elem["start"]["label"]]["isMore"] = true;
+      tmp[elem["start"]["label"]]["relations"].push({"rel": elem["rel"]["label"], "end": elem["end"]["label"]});
+    }
 
-      if(!tmp[elem["end"]["label"]]){
-        tmp[elem["end"]["label"]] = {"isMore": false, "relations": [{"start": elem["start"]["label"], "rel": elem["rel"]["label"]}]};
-      } else {
-        tmp[elem["end"]["label"]]["isMore"] = true;
-        tmp[elem["end"]["label"]]["relations"].push({"start": elem["start"]["label"], "rel": elem["rel"]["label"]});
-      }
-    });
+    if(!tmp[elem["end"]["label"]]){
+      tmp[elem["end"]["label"]] = {"isMore": false, "relations": [{"start": elem["start"]["label"], "rel": elem["rel"]["label"]}]};
+    } else {
+      tmp[elem["end"]["label"]]["isMore"] = true;
+      tmp[elem["end"]["label"]]["relations"].push({"start": elem["start"]["label"], "rel": elem["rel"]["label"]});
+    }
+  });
 
-    var dict = {};
-    $.each(tmp, function(key, val){
-      if(val["isMore"] && (Object.keys(val["relations"]).length >= 5)){
-        // TODO.. deal with duplicates
-        dict[key] = val;
-      }
-    });
+  var dict = {};
+  $.each(tmp, function(key, val){
+    if(val["isMore"] && (Object.keys(val["relations"]).length >= 5)){
+      // TODO.. deal with duplicates
+      dict[key] = val;
+    }
+  });
 
-    const keys = Object.keys(dict);
-    const index = Math.floor(Math.random() * keys.length);
-    const node = keys[index];
+  const keys = Object.keys(dict);
+  const index = Math.floor(Math.random() * keys.length);
+  const node = keys[index];
 
-    // Get relations array
-    const dictRel = dict[node]["relations"];
+  // Get relations array
+  const dictRel = dict[node]["relations"];
 
-    var start = ((dictRel[0]["start"] === undefined) ? "????" : dictRel[0]["start"]);
-    var rel = dictRel[0]["rel"];
-    var end = ((dictRel[0]["end"] === undefined) ? "????" : dictRel[0]["end"]);
-    $("ul.qui-suis-je").append($("<li>").addClass("list-group-item text-center text-capitalize text-primary").text(start + " " + rel + " " + end));
+  var start = ((dictRel[0]["start"] === undefined) ? "????" : dictRel[0]["start"]);
+  var rel = dictRel[0]["rel"];
+  var end = ((dictRel[0]["end"] === undefined) ? "????" : dictRel[0]["end"]);
+  $("ul.qui-suis-je").append($("<li>").addClass("list-group-item text-center text-capitalize text-primary").text(start + " " + rel + " " + end));
 
-    var interval = setInterval(quiSuisJeTime(dictRel), 20000);
-    var timeout = setTimeout(clearInterval, 60000, interval);
-    var timeout2 = setTimeout(function(){   // Time Out!
-      $("p.qui-suis-je").text("Time Out!");
+  var interval = setInterval(quiSuisJeTime(dictRel), 20000);
+  var timeout = setTimeout(clearInterval, 60000, interval);
+  var timeout2 = setTimeout(function(){   // Time Out!
+    $("p.qui-suis-je").text("Time Out!");
+
+    // Disable Answer button
+    $("button.qui-suis-je-answer").prop("disabled", true);
+
+    // Enable Start button
+    $("button.start-qui-suis-je").prop("disabled", false);
+
+  }, 80000);
+
+  // User clicks on answer button.
+  $("button.qui-suis-je-answer").click(function(){
+    // Check input answer
+    var val = $("input.qui-suis-je-answer").val();
+
+    // Remove input answer
+    $("input.qui-suis-je-answer").val("");
+
+    if(val == node) {
+      clearInterval(interval);
+      clearTimeout(timeout);
+      clearTimeout(timeout2);
+
+      $("p.qui-suis-je").text((8 - $("#qui-suis-je ul li").length)+" Points!");
 
       // Disable Answer button
       $("button.qui-suis-je-answer").prop("disabled", true);
 
       // Enable Start button
       $("button.start-qui-suis-je").prop("disabled", false);
-
-    }, 80000);
-
-    // User clicks on answer button.
-    $("button.qui-suis-je-answer").click(function(){
-      // Check input answer
-      var val = $("input.qui-suis-je-answer").val();
-
-      // Remove input answer
-      $("input.qui-suis-je-answer").val("");
-
-      if(val == node) {
-        clearInterval(interval);
-        clearTimeout(timeout);
-        clearTimeout(timeout2);
-
-        $("p.qui-suis-je").text((8 - $("#qui-suis-je ul li").length)+" Points!");
-
-        // Disable Answer button
-        $("button.qui-suis-je-answer").prop("disabled", true);
-
-        // Enable Start button
-        $("button.start-qui-suis-je").prop("disabled", false);
-      }
-    });
+    }
   });
 }
