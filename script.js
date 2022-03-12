@@ -31,7 +31,7 @@ $(document).ready(function(){
 
 });
 
-// Constructor Functions
+/******************* Constructor Functions *******************/
 var createTableDeFaits = function(){
   var nodeTable = $('<table>');
   nodeTable.addClass("table center table-bordered table-info")
@@ -54,6 +54,46 @@ var createTableDeFaits = function(){
   });
 
   $('#table').append(nodeTable);
+}
+
+var createTableConsultation = function(data){
+  // Remove table
+  $("#consultation table").remove();
+
+  var nodeTable = $('<table>');
+  nodeTable.addClass("table table-bordered table-info");
+
+  var nodesTable = ["Start", "Relation", "End"];
+  var node = $("<tr>");
+  $.each(nodesTable, function(index, elem){
+    node.append($("<th>").addClass("text-center").text(elem));
+  });
+  nodeTable.append(node);
+
+  // Update Table with JSON data.
+  $.each(data["edges"], function(index, elem){
+    var n = $("<tr>");
+    n.append($("<td>").addClass(elem["start"]["@id"]).text(elem["start"]["label"]));
+    n.append($("<td>").addClass(elem["rel"]["@id"]).text(elem["rel"]["label"]));
+    n.append($("<td>").addClass(elem["end"]["@id"]).text(elem["end"]["label"]));
+
+    nodeTable.append(n);
+  });
+
+  $('#consultation div.table').append(nodeTable);
+
+  // TODO.. review this
+  // Update Table de Faits
+  var nodeTable = $('#table .table');
+  $.each(data["edges"], function(index, elem){
+    console.log(elem);
+    var n = $("<tr>");
+    n.append($("<td>").addClass(elem["start"]["@id"]).text(elem["start"]["label"]));
+    n.append($("<td>").addClass(elem["rel"]["@id"]).text(elem["rel"]["label"]));
+    n.append($("<td>").addClass(elem["end"]["@id"]).text(elem["end"]["label"]));
+    nodeTable.append(n);
+  });
+  computeInfo();
 }
 
 // Put result.json data inside local storage.
@@ -102,7 +142,8 @@ var computeInfo = function(){
   $("#relations").text(relationDict.count);
 }
 
-// Events Handler Functions
+
+/******************* Events Handler Functions *******************/
 var onClick = function(button, toShow, toHide){
   $(button).click(function(){
     $.each(toHide, function(index, elem){
@@ -149,65 +190,9 @@ var onClickAnswer = function(button, timeout){
   });
 }
 
-var createTableConsultation = function(data){
-  // Remove table
-  $("#consultation table").remove();
-
-  var nodeTable = $('<table>');
-    nodeTable.addClass("table table-bordered table-info")
-
-    var nodesTable = ["Start", "Relation", "End"];
-    var node = $("<tr>");
-    $.each(nodesTable, function(index, elem){
-      node.append($("<th>").addClass("text-center").text(elem));
-    });
-    nodeTable.append(node);
-
-    // Update Table with JSON data.
-    $.each(data["edges"], function(index, elem){
-      var n = $("<tr>");
-      n.append($("<td>").addClass(elem["start"]["@id"]).text(elem["start"]["label"]));
-      n.append($("<td>").addClass(elem["rel"]["@id"]).text(elem["rel"]["label"]));
-      n.append($("<td>").addClass(elem["end"]["@id"]).text(elem["end"]["label"]));
-
-      nodeTable.append(n);
-    });
-
-    $('#consultation div.table').append(nodeTable);
-
-    // TODO.. review this
-    // Update Table de Faits
-    var nodeTable = $('#table .table');
-    $.each(data["edges"], function(index, elem){
-      console.log(elem);
-      var n = $("<tr>");
-      n.append($("<td>").addClass(elem["start"]["@id"]).text(elem["start"]["label"]));
-      n.append($("<td>").addClass(elem["rel"]["@id"]).text(elem["rel"]["label"]));
-      n.append($("<td>").addClass(elem["end"]["@id"]).text(elem["end"]["label"]));
-      nodeTable.append(n);
-    });
-    computeInfo();
-}
-
-// This function updates the JSON file and returns only french and/or english results.
-var updateData = function(data){
-  // Filter the edges to only keep french and/or english result.
-  var edges = [];
-  var jsonData = JSON.parse(localStorage["result"]);
-  $.each(data["edges"], function(index, elem){
-    if(elem["start"]["language"] == "fr" || elem["start"]["language"] == "en"){
-      edges.push(elem);
-      jsonData.push(elem);
-    }
-  });
-  data["edges"] = edges;
-
-  // Update Local Storage data.
-  window.localStorage.setItem("result", JSON.stringify(jsonData));
-
-  return data;
-}
-
+/******************* Consultation's Logic *******************/
+// This function handles the GET request for the query and changes
+// the Interface de Consultation depending on the return value.
 var search = function(query){
   var result = null;
 
@@ -246,6 +231,25 @@ var search = function(query){
   return result;
 }
 
+// This function updates the JSON file and returns only french and/or english results.
+var updateData = function(data){
+  // Filter the edges to only keep french and/or english result.
+  var edges = [];
+  var jsonData = JSON.parse(localStorage["result"]);
+  $.each(data["edges"], function(index, elem){
+    if(elem["start"]["language"] == "fr" || elem["start"]["language"] == "en"){
+      edges.push(elem);
+      jsonData.push(elem);
+    }
+  });
+  data["edges"] = edges;
+
+  // Update Local Storage data.
+  window.localStorage.setItem("result", JSON.stringify(jsonData));
+
+  return data;
+}
+
 var consultation = function() {
   // Disable Nav bar.
   $("#consultation nav").hide();
@@ -274,7 +278,7 @@ var consultation = function() {
   });
 }
 
-// Game's Logic
+/******************* Game's Logic *******************/
 var ouiNonGame = function(){
   // Disable Start button
   $("button.start-oui-non").prop("disabled", true);
