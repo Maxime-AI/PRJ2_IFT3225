@@ -249,7 +249,7 @@ var updateData = function(data){
   $.each(data["edges"], function(index, elem){
     var start = elem["start"];
     var rel = elem["rel"];
-    var end = elem["start"];
+    var end = elem["end"];
     jsonData.push({"start": {"@id": start["@id"],"label": start["label"]}, "rel": {"@id": rel["@id"], "label": rel["label"]}, "end": {"@id": end["@id"], "label": end["label"]}});
   });
 
