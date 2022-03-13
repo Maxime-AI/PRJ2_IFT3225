@@ -235,17 +235,27 @@ var search = function(query){
 var updateData = function(data){
   // Filter the edges to only keep french and/or english result.
   var edges = [];
-  var jsonData = JSON.parse(localStorage["result"]);
+//  var jsonData = JSON.parse(localStorage["result"]);
   $.each(data["edges"], function(index, elem){
     if(elem["start"]["language"] == "fr" || elem["start"]["language"] == "en"){
       edges.push(elem);
-      jsonData.push(elem);
+//      jsonData.push(elem);
     }
   });
   data["edges"] = edges;
 
+  // Modify data for the localStorage format
+  var jsonData = JSON.parse(localStorage["result"]);
+  $.each(data["edges"], function(index, elem){
+    var start = elem["start"];
+    var rel = elem["rel"];
+    var end = elem["start"];
+    jsonData.push({"start": {"@id": start["@id"],"label": start["label"]}, "rel": {"@id": rel["@id"], "label": rel["label"]}, "end": {"@id": end["@id"], "label": end["label"]}});
+  });
+
   // Update Local Storage data.
   window.localStorage.setItem("result", JSON.stringify(jsonData));
+  console.log(localStorage["result"]);
 
   return data;
 }
